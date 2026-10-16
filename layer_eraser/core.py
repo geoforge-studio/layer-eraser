@@ -316,13 +316,12 @@ def _delete_files(plan):
     return warnings
 
 
-def _ogr_scalar(dataset, sql):
+def _ogr_first_column(dataset, sql):
     result = dataset.ExecuteSQL(sql)
     if result is None:
         raise SourceError('The GeoPackage operation could not be verified.')
     try:
-        feature = result.GetNextFeature()
-        return feature.GetField(0) if feature is not None else None
+        return tuple(feature.GetField(0) for feature in result)
     finally:
         dataset.ReleaseResultSet(result)
 
@@ -362,11 +361,13 @@ def _delete_geopackage(plan):
         if dataset.DeleteLayer(index) != 0:
             raise SourceError(gdal.GetLastErrorMsg() or 'The table could not be deleted.')
         # All scope checks run before COMMIT, so unexpected results can roll back.
-        literal = "'" + plan.table.replace("'", "''") + "'"
-        for internal in ("sqlite_master", "gpkg_contents", "gpkg_geometry_columns"):
-            column = "name" if internal == "sqlite_master" else "table_name"
-            sql = "SELECT COUNT(*) FROM " + _quote(internal) + " WHERE " + column + "=" + literal
-            if _ogr_scalar(dataset, sql) != 0:
+        # GDAL's ExecuteSQL has no parameter-binding interface. Keep these
+        # queries constant and compare the untrusted table name in Python.
+        for sql in (
+            "SELECT name FROM sqlite_master WHERE type='table'",
+            "SELECT table_name FROM gpkg_geometry_columns",
+        ):
+            if plan.table in _ogr_first_column(dataset, sql):
                 raise SourceError('The table or its metadata was not fully removed. The transaction was rolled back.')
         expected = tuple(row for row in plan.catalog if row[0] != plan.table)
         if _ogr_catalog(dataset) != expected:

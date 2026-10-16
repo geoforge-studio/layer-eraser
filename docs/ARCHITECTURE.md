@@ -31,6 +31,10 @@ Version 0.2.0 paused every vector sibling through an empty source and reconstruc
 
 GeoPackage inspection and backup use read-only SQLite connections. Table deletion uses GDAL's GPKG driver inside a dataset transaction. The code verifies removal of the selected table and geospatial metadata, and presence of surviving catalog entries, before committing. It does not implement database table deletion through a raw SQLite `DROP TABLE`.
 
+GDAL post-delete verification uses constant SQL queries and compares the selected table name in Python. No table name or project value is interpolated into those queries. This removes the Bandit B608 finding reported for 0.2.1 without suppressions or weaker transaction checks. Read-only SQLite inspection continues to bind data values through placeholders; its PRAGMA identifier is quoted as an identifier.
+
+QGIS integration uses `qgis.PyQt`, scoped enums and explicit provider read flags. The flag factory accommodates the move from `QgsDataProvider.ReadFlags` to `Qgis.DataProviderReadFlags`. The CI runner asserts QGIS and Qt versions so a Qt 5 image cannot accidentally satisfy a QGIS 4 check.
+
 Standalone file bundles are renamed into a temporary directory on the same filesystem. If any move fails, completed moves are reversed. After successful staging, the temporary directory is removed. An incomplete temporary-file purge is reported separately from removal of the active source.
 
 ## Limits and extension points

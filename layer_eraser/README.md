@@ -1,4 +1,4 @@
-# Layer Eraser 0.2.1
+# Layer Eraser 0.2.2
 
 Layer Eraser adds **Delete Layer and Source…** immediately after **Remove Layer** in the QGIS Layers panel.
 
@@ -36,7 +36,9 @@ After upgrading from 0.2.0, restart QGIS. For an already invalid connection, fir
 
 The plugin stops for open edit sessions, supported project/database dependencies, changed sources and permission or lock failures. Layer connections are restored in place after source-deletion errors in the tested scenarios.
 
-Requires QGIS 3.34 or later and its bundled GDAL, with no additional Python packages. Tested on QGIS 3.34.4 / GDAL 3.8.4 on Linux. Windows, macOS and QGIS 4 / Qt 6 remain separate validation targets.
+Requires QGIS 3.34 or later, including QGIS 4 with Qt 6, and its bundled GDAL. No additional Python packages are required. The same ZIP serves both QGIS generations. Release checks include QGIS 3.34.4 / Qt 5 and official QGIS 4.0.3 and 4.2.3 / Qt 6 Linux containers, plus Bandit with no suppressions. Windows and macOS require separate platform validation.
+
+Version 0.2.2 removes dynamically constructed GeoPackage verification SQL. Table names remain Python values and are not inserted into verification queries. Scoped layer flags and explicit provider read flags support Qt 5 and Qt 6.
 
 Publisher: **GeoForge Studio**. License: **GPL-3.0-or-later**.
 

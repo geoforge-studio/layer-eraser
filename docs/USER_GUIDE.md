@@ -58,7 +58,7 @@ If a file is locked, close the application or table view holding that source and
 
 Layer Eraser 0.2.0 could leave surviving GeoPackage layers with invalid connection indicators after resetting and reconstructing their providers. Installing 0.2.1 prevents that reset path; it cannot establish the state of a database it has not inspected.
 
-1. Install 0.2.1 and restart QGIS to load the updated modules.
+1. Install 0.2.2 or later and restart QGIS to load the updated modules.
 2. In Browser, expand the original GeoPackage and check whether the affected tables are present.
 3. If a table is present, repair the broken layer's connection using QGIS' **Change Data Source** action when available. Select the original GeoPackage and that exact table, not the full container without a table name.
 4. Alternatively, add the existing table again from Browser. Verify its attributes and geometry, then remove only the broken project reference using native **Remove Layer**.

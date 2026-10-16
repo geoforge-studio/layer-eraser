@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.2.2 — 2026-10-16
+
+- Remove dynamically constructed SQL from GeoPackage post-delete verification. GDAL receives constant queries; table names are compared as Python values inside the existing transaction.
+- Address Bandit B608 without scanner suppressions. Add a required Bandit scan of every runtime Python file before publishing a release.
+- Use scoped map-layer flags and explicit provider read flags compatible with both Qt 5 and Qt 6 bindings.
+- Add real-runtime checks for QGIS 4.0.3 and 4.2.3 in official Debian Trixie images pinned by digest; assert QGIS series and Qt 6 before testing.
+- Add regressions for SQL-like table names and non-removable layers; the suite now contains 50 tests.
+- Preserve GeoPackage connection recovery, cancellable backups and QGIS 3.34 support.
+
 ## 0.2.1 — 2026-10-16
 
 - Fix GeoPackage deletion invalidating connections to surviving tables: never assign empty sources to GeoPackage layers or reconstruct named siblings from XML.

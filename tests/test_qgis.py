@@ -211,7 +211,7 @@ class QgisTests(unittest.TestCase):
         source = keep.source()
         self.project.setDirty(False)
         # Cause post-delete verification to fail inside the transaction.
-        with patch.object(core, '_ogr_scalar', return_value=1):
+        with patch.object(core, '_ogr_first_column', return_value=('target',)):
             with self.assertRaises(core.SourceError):
                 bridge.execute_delete(self.project, target, bridge.plan_layer(target), backup=False)
         self.assertEqual(keep.source(), source)
@@ -337,6 +337,15 @@ class QgisTests(unittest.TestCase):
         self.assertTrue(target.isValid())
         self.assertEqual(target.featureCount(), 3)
         keep.rollBack()
+
+    def test_non_removable_layer_blocks_source_deletion_in_both_qt_bindings(self):
+        from qgis.core import QgsMapLayer
+        target = self.add(str(self.gpkg) + '|layername=target')
+        target.setFlags(target.flags() & ~QgsMapLayer.LayerFlag.Removable)
+        with self.assertRaisesRegex(core.SourceError, 'protected against removal'):
+            bridge.execute_delete(self.project, target, bridge.plan_layer(target), backup=False)
+        self.assertIs(self.project.mapLayer(target.id()), target)
+        self.assertEqual(len(list(target.getFeatures())), 3)
 
     def test_join_dependency_blocks_deletion(self):
         target = self.add(str(self.gpkg) + "|layername=target")

@@ -4,7 +4,7 @@
 
 Layer Eraser adds **Delete Layer and Source…** immediately after **Remove Layer** in a layer's context menu. A confirmation dialog shows the source file, the actual GeoPackage table name, and every project layer reference that will be removed. Backups are enabled by default.
 
-Maintained by **GeoForge Studio**. Version **0.2.1**. Licensed under **GPL-3.0-or-later**.
+Maintained by **GeoForge Studio**. Version **0.2.2**. Licensed under **GPL-3.0-or-later**.
 
 ![Layer Eraser confirmation dialog](docs/images/confirmation.png)
 
@@ -22,7 +22,7 @@ Independent files with the same stem, such as CSV, TIFF, QML, and SLD, are prese
 
 ## Install
 
-1. Download `layer_eraser-0.2.1.zip` from a release.
+1. Download `layer_eraser-0.2.2.zip` from a release.
 2. In QGIS, open **Plugins → Manage and Install Plugins → Install from ZIP**.
 3. Select the plugin ZIP without extracting it and install **Layer Eraser**.
 4. Right-click one supported layer in the **Layers** panel.
@@ -31,7 +31,7 @@ If you installed the earlier **GeoForge Source Delete 0.1.0** prototype, uninsta
 
 The full GitHub source archive is a development project, not the installable plugin ZIP.
 
-When upgrading from Layer Eraser 0.2.0, install the new ZIP and restart QGIS so the updated Python modules are loaded. If layers were already marked invalid, see [repairing an existing connection](docs/USER_GUIDE.md#repairing-an-existing-connection).
+When upgrading an earlier Layer Eraser version, install the new ZIP and restart QGIS so the updated Python modules are loaded. For layers already marked invalid by 0.2.0, see [repairing an existing connection](docs/USER_GUIDE.md#repairing-an-existing-connection).
 
 ## Use
 
@@ -66,12 +66,12 @@ The checks do not discover references in other closed projects or every possible
 | Item | Status |
 | --- | --- |
 | Minimum declared QGIS version | 3.34 |
-| Versions actually tested | QGIS 3.34.4, GDAL 3.8.4, Python 3.12, Qt 5 / PyQt5 on Ubuntu 24.04 |
-| QGIS 4 / Qt 6 | Compatibility target; not yet exercised in the recorded test environment |
+| Local test environment | QGIS 3.34.4, GDAL 3.8.4, Python 3.12, Qt 5 / PyQt5 on Ubuntu 24.04 |
+| Required QGIS 4 checks | QGIS 4.0.3 and 4.2.3 with Qt 6 in official Debian Trixie images |
 | Windows and macOS | Intended platforms; not yet exercised in the recorded test environment |
 | Runtime dependencies | QGIS and its bundled GDAL only; no pip installation, account, or network service |
 
-Declared version bounds are compatibility targets, not a claim that every version or platform has passed tests.
+The same plugin ZIP supports QGIS 3 and 4. A release requires all 50 real-file/provider/widget tests on QGIS 3 and both QGIS 4 images, plus a clean Bandit scan. The runner asserts the actual QGIS series and Qt major version. See the [validation report](docs/VALIDATION.md) and [current Actions results](https://github.com/geoforge-studio/layer-eraser/actions); declared bounds do not imply testing every version or operating system.
 
 ## Try the sample project
 

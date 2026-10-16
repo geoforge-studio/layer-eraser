@@ -1,17 +1,13 @@
-# Layer Eraser 0.2.1
+# Layer Eraser 0.2.2
 
-Layer Eraser adds **Delete Layer and Source…** immediately after **Remove Layer** in the QGIS Layers panel. It deletes a local layer's underlying source data and removes all current project references to that source after successful deletion.
+This release addresses the Bandit B608 finding in GeoPackage verification and adds required QGIS 4 / Qt 6 runtime checks. The same installable ZIP supports QGIS 3.34 and later, including QGIS 4.
 
-Supported sources are individual vector or attribute tables in a GeoPackage, complete Shapefile bundles, and standalone GeoJSON. The English confirmation dialog displays the actual file/table and affected project layers, with backup creation enabled by default.
+GeoPackage post-delete verification now uses constant SQL queries. The selected table name is compared in Python, rather than inserted into SQL text. Verification still runs before transaction commit, so a failed scope check rolls back the deletion. No Bandit checks are suppressed. Regression coverage includes a table name containing quotes and SQL-like text.
 
-This maintenance release fixes GeoPackage deletion leaving surviving layers with invalid connection indicators. Named surviving layers keep the same provider objects and source URIs; data and field caches are synchronized without resetting their sources or reconstructing their XML. Index-based survivors are converted directly to table-name sources after backup completes.
+Scoped map-layer flags and explicit provider read flags accommodate both Qt 5 and Qt 6 bindings. The release workflow requires a clean Bandit scan and the full 50-test real-provider/widget suite on QGIS 3.34 / Qt 5 and official QGIS 4.0.3 and 4.2.3 / Qt 6 Linux images. It verifies the actual QGIS and Qt versions before running tests and publishes only after every job succeeds.
 
-Repeated container opens and the automatic global Browser refresh have been removed. Full GeoPackage backups still depend on database size, but now display incremental progress and support cancellation before deletion. Partial cancelled backups are removed, and a busy backup stops after bounded lock retries.
+The GeoPackage connection fix and cancellable backup progress from 0.2.1 are retained. Supported sources remain one vector/attribute GeoPackage table, a Shapefile bundle or standalone GeoJSON. The operation deletes the entire source table or file, regardless of filters or selection. QGIS Undo does not restore deleted source data; use the optional backup for manual recovery.
 
-The release retains source-change checks, supported dependency checks, transactional GeoPackage deletion, staged file removal and recovery after errors. The runtime requires only QGIS and its bundled GDAL. **48 real-file/provider/widget tests passed** in the recorded Linux environment.
+Install **layer_eraser-0.2.2.zip** through **Plugins → Manage and Install Plugins → Install from ZIP**, then restart QGIS after upgrading. A separate ZIP for QGIS 4 is not required. The source archive is for development.
 
-This operation deletes the entire source table or file, regardless of layer filters or selected features. QGIS Undo does not restore it. Use the optional backup for manual recovery.
-
-Install **layer_eraser-0.2.1.zip** using **Plugins → Manage and Install Plugins → Install from ZIP**, then restart QGIS when upgrading from 0.2.0. The source archive is for development and should not be installed through Plugin Manager. For layers already marked invalid, check the original tables in Browser and follow the connection-repair steps in the user guide.
-
-The recorded test environment is QGIS 3.34.4 / GDAL 3.8.4 on Linux. Windows, macOS and QGIS 4 / Qt 6 require separate validation; declared compatibility targets are not a claim of complete platform coverage.
+Tests use real QGIS providers and Qt widgets on Linux. Windows file locking, macOS and full native desktop-process validation remain separate platform checks. See `docs/VALIDATION.md` and the linked GitHub Actions run for execution evidence.

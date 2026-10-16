@@ -1,4 +1,4 @@
-# Validation report — Layer Eraser 0.2.1
+# Validation report — Layer Eraser 0.2.2
 
 Date: 2026-10-16.
 
@@ -9,7 +9,24 @@ Date: 2026-10-16.
 - GDAL **3.8.4**, using real GPKG, Shapefile and GeoJSON drivers.
 - Python 3.12; Qt 5 / PyQt5; offscreen widget rendering.
 
-**48 tests passed, 0 skipped, 0 failures.** The suite includes the original 39 tests and nine regressions for the GeoPackage connection fix, cancellation and busy backup handling.
+**50 tests passed locally, 0 skipped, 0 failures.** The suite retains all 48 tests from 0.2.1 and adds regressions for SQL-like table names and non-removable layers. It also verifies rollback through the new constant-query verification path.
+
+## Security scan
+
+Bandit **1.9.4** reproduced exactly one B608 finding in the 0.2.1 runtime. After replacing dynamic post-delete verification SQL with constant queries and Python comparisons, scanning all six runtime Python files reports **0 issues and 0 skipped tests**. No `nosec` annotations, test exclusions or severity filters were added.
+
+The hostile-name regression deletes a table named `target'; DROP TABLE "keep"; --` with the real GDAL driver and verifies that `keep` and its rows remain intact. A separate injected-verification failure test confirms rollback after a post-delete check fails.
+
+## Required QGIS 4 / Qt 6 checks
+
+The GitHub workflow runs the same full suite in official QGIS Docker images pinned by digest:
+
+| Expected runtime | Image | Binding check |
+| --- | --- | --- |
+| QGIS 4.0.3 | `qgis/qgis:4.0.3-trixie` | Assert QGIS 4.0 series and Qt 6 |
+| QGIS 4.2.3 | `qgis/qgis:4.2.3-trixie` | Assert QGIS 4.2 series and Qt 6 |
+
+Actual QGIS, GDAL, Qt and PyQt versions are printed in each run's logs. These jobs are release gates alongside QGIS 3 and Bandit; a ZIP cannot be published automatically unless every job succeeds. Current results are available in [GitHub Actions](https://github.com/geoforge-studio/layer-eraser/actions). The local environment above is QGIS 3 / Qt 5; QGIS 4 execution belongs to the remote CI jobs.
 
 ## Verified behavior
 
@@ -59,9 +76,9 @@ The Linux GDAL/QGIS combination emits some WAL/NOLOCK diagnostics while opening 
 
 The full desktop executable could not start successfully in the constrained display environment used for the prototype's native-app smoke attempt. The real-provider/widget suite does not claim full desktop-process certification. `tests/qgis_desktop_smoke.py` remains available for a normal desktop or CI display.
 
-Windows file locking, macOS and QGIS 4 / Qt 6 were not exercised here. Scoped Qt enums and `qgis.PyQt` imports target both Qt generations, but compatibility bounds are not test coverage.
+Windows file locking and macOS were not exercised here. QGIS 4 / Qt 6 checks use the official Linux containers above. Compatibility bounds do not imply coverage of every version or operating system.
 
-The recorded local results above are separate from the current [GitHub Actions status](https://github.com/geoforge-studio/layer-eraser/actions). The workflow reruns the real-provider/widget suite, builds the installable ZIP and publishes a new version only after those checks succeed on `main`. QGIS catalog submission remains a separate step.
+The recorded local results above are separate from the current GitHub Actions status. The workflow runs Bandit and all three QGIS environments, builds the installable ZIP and publishes a new version only after all checks succeed on `main`. QGIS catalog submission remains a separate step.
 
 ## Reproduce
 
@@ -70,6 +87,7 @@ Using QGIS' Python from the repository root:
 ```sh
 QT_QPA_PLATFORM=offscreen python3 -X faulthandler scripts/run_qgis_tests.py
 python3 scripts/build_plugin.py
+python3 -m bandit -r layer_eraser
 ```
 
 The release runner fails if real-runtime imports are unavailable or any tests are skipped. Ordinary `unittest discover -s tests -v` is also available for development.

@@ -10,7 +10,7 @@ from pathlib import Path
 
 from qgis.PyQt.QtXml import QDomDocument
 from qgis.core import (
-    QgsDataProvider, QgsMapLayer, QgsProviderRegistry, QgsReadWriteContext,
+    Qgis, QgsDataProvider, QgsMapLayer, QgsProviderRegistry, QgsReadWriteContext,
     QgsVectorLayer,
 )
 
@@ -106,7 +106,7 @@ def affected_layers(project, plan):
 def check_project(project, plan, layers):
     ids = {layer.id() for layer in layers}
     for layer in layers:
-        if not (layer.flags() & QgsMapLayer.Removable):
+        if not (layer.flags() & QgsMapLayer.LayerFlag.Removable):
             raise SourceError('This layer is protected against removal in the project: ' + layer.name())
         if layer.isEditable():
             raise SourceError('Finish editing this layer before deleting its source: ' + layer.name())
@@ -175,17 +175,24 @@ class ProviderPause:
         options.transformContext = self.project.transformContext()
         return options
 
+    def set_source(self, state, source):
+        # Read flags moved from QgsDataProvider to Qgis in newer QGIS builds.
+        # Explicit empty flags preserve the existing style in both bindings.
+        flag_type = getattr(Qgis, "DataProviderReadFlags", None)
+        flags = flag_type(0) if flag_type is not None else QgsDataProvider.ReadFlags(0)
+        state.layer.setDataSource(source, state.name, "ogr", self.options(), flags)
+
     def detach(self):
         self.capture()
         for state in self.states:
             # A real provider reset, not removing tree nodes or changing IDs.
-            state.layer.setDataSource("", state.name, "ogr", self.options(), False)
+            self.set_source(state, "")
 
     def stabilize(self):
         """Convert only index-based survivors directly to valid named sources."""
         self.capture()
         for state in self.states:
-            state.layer.setDataSource(state.stable_source, state.name, "ogr", self.options(), False)
+            self.set_source(state, state.stable_source)
             if not state.layer.isValid():
                 raise SourceError('The indexed layer could not be connected by table name: ' + state.name)
             state.layer.selectByIds(state.selection)
@@ -196,7 +203,7 @@ class ProviderPause:
             try:
                 # A public provider reset emits validity changes for the layer
                 # tree. Reading XML alone left stale warning indicators in 0.2.0.
-                state.layer.setDataSource(state.source, state.name, "ogr", self.options(), False)
+                self.set_source(state, state.source)
                 doc = state.document.cloneNode(True).toDocument()
                 ok = state.layer.readLayerXml(doc.documentElement(), self.context)
                 if not ok or not state.layer.isValid():

@@ -214,10 +214,19 @@ class GeoPackageTests(unittest.TestCase):
 
     def test_rollback_after_post_delete_validation_failure(self):
         plan = core.build_plan(self.path, "target")
-        with patch.object(core, "_ogr_scalar", return_value=1):
+        with patch.object(core, "_ogr_first_column", return_value=("target",)):
             with self.assertRaises(core.SourceError):
                 core.delete_source(plan, backup=False)
         self.assertEqual(self.query('SELECT COUNT(*) FROM "target"'), [(3,)])
+
+    def test_sql_like_table_name_cannot_change_another_table(self):
+        name = 'target\'; DROP TABLE "keep"; --'
+        self.path.unlink()
+        make_gpkg(self.path, (name, "keep"))
+        before = self.query('SELECT * FROM "keep"')
+        core.delete_source(core.build_plan(self.path, name), backup=False)
+        self.assertEqual(self.query('SELECT * FROM "keep"'), before)
+        self.assertEqual(self.query('SELECT table_name FROM gpkg_contents'), [("keep",)])
 
     def test_backup_captures_committed_wal_data(self):
         self.path.unlink()

@@ -9,6 +9,18 @@ permissions:
   contents: read
 
 jobs:
+  security:
+    name: Bandit security scan
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+      - name: Install Bandit
+        run: python3 -m pip install bandit==1.9.4
+      - name: Scan all runtime Python files without suppressions
+        run: python3 -m bandit -r layer_eraser
+
   qgis-tests:
     runs-on: ubuntu-24.04
     timeout-minutes: 20
@@ -32,9 +44,33 @@ jobs:
           path: dist/layer_eraser-*.zip
           if-no-files-found: error
 
+  qgis4-tests:
+    name: QGIS ${{ matrix.series }} / Qt 6
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - series: '4.0'
+            image: qgis/qgis:4.0.3-trixie@sha256:23c12670e69909e8659a5c098aa307996735a5763b9ff9c3268bdeeee1a10916
+          - series: '4.2'
+            image: qgis/qgis:4.2.3-trixie@sha256:56c69c92e316aa679e5c30ebf7fcfd89fd1124ec728106ec0cced1c71a28d877
+    container:
+      image: ${{ matrix.image }}
+    env:
+      QT_QPA_PLATFORM: offscreen
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+      - name: Test real QGIS 4 providers and Qt 6 widgets
+        run: /usr/bin/python3 -X faulthandler scripts/run_qgis_tests.py --expect-qgis '${{ matrix.series }}' --expect-qt 6
+      - name: Validate and build the same plugin on QGIS 4
+        run: /usr/bin/python3 scripts/build_plugin.py
+
   release:
     name: Publish tested release
-    needs: qgis-tests
+    needs: [security, qgis-tests, qgis4-tests]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-24.04
     timeout-minutes: 5
