@@ -1,0 +1,12 @@
+* text=auto
+*.py text eol=lf
+*.md text eol=lf
+*.txt text eol=lf
+*.yml text eol=lf
+*.svg text eol=lf
+*.gpkg binary
+*.qgz binary
+*.shp binary
+*.shx binary
+*.dbf binary
+*.png binary

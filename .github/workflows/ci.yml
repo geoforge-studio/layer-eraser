@@ -1,0 +1,83 @@
+name: Test and package
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  qgis-tests:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      QT_QPA_PLATFORM: offscreen
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+      - name: Install QGIS test dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install --no-install-recommends -y python3-qgis qgis-providers
+      - name: Test real providers and widgets
+        run: /usr/bin/python3 -X faulthandler scripts/run_qgis_tests.py
+      - name: Build and validate the installable plugin
+        run: /usr/bin/python3 scripts/build_plugin.py
+      - name: Upload plugin package
+        uses: actions/upload-artifact@v4
+        with:
+          name: layer-eraser-plugin
+          path: dist/layer_eraser-*.zip
+          if-no-files-found: error
+
+  release:
+    name: Publish tested release
+    needs: qgis-tests
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    concurrency:
+      group: layer-eraser-release
+      cancel-in-progress: false
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+      - name: Download tested plugin package
+        uses: actions/download-artifact@v4
+        with:
+          name: layer-eraser-plugin
+          path: dist
+      - name: Read release version
+        id: version
+        run: |
+          python3 - <<'PY'
+          import configparser
+          import os
+          from pathlib import Path
+          config = configparser.ConfigParser(interpolation=None)
+          config.read('layer_eraser/metadata.txt', encoding='utf-8')
+          version = config['general']['version']
+          assert Path(f'dist/layer_eraser-{version}.zip').is_file()
+          with open(os.environ['GITHUB_OUTPUT'], 'a', encoding='utf-8') as output:
+              output.write(f'version={version}\n')
+          PY
+      - name: Publish new version without replacing existing releases
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          release_tag="v${RELEASE_VERSION}"
+          if gh release view "$release_tag" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "Release $release_tag already exists; leaving it unchanged."
+            exit 0
+          fi
+          gh release create "$release_tag" "dist/layer_eraser-${RELEASE_VERSION}.zip" \
+            --repo "$GITHUB_REPOSITORY" \
+            --target "$GITHUB_SHA" \
+            --title "Layer Eraser ${RELEASE_VERSION}" \
+            --notes-file docs/RELEASE_NOTES.md \
+            --latest

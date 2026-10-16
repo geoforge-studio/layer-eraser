@@ -1,0 +1,31 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "label": "Practice point 1"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          48.3,
+          36.5
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "label": "Practice point 2"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          48.5,
+          36.7
+        ]
+      }
+    }
+  ]
+}

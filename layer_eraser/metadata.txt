@@ -1,0 +1,20 @@
+[general]
+name=Layer Eraser
+description=Delete a local vector layer's source data and remove its project references, directly from the Layers panel.
+about=Adds Delete Layer and Source next to Remove Layer. Supports individual vector and attribute tables in GeoPackage, complete Shapefile bundles, and standalone GeoJSON. Shows the actual source and affected project layers before deletion. Includes optional backups enabled by default, dependency checks, and recovery of layer connections after errors. Deletes the entire underlying table or file, regardless of filters or selected features. Uses QGIS and its bundled GDAL; no additional Python packages or external accounts are required. Raster, remote, virtual, and SQL-result layers are not supported. Tested on QGIS 3.34.4 / Linux; Windows, macOS, and QGIS 4 need separate validation.
+version=0.2.1
+qgisMinimumVersion=3.34
+qgisMaximumVersion=4.99
+author=GeoForge Studio
+email=reynolds.mach88@gmail.com
+homepage=https://github.com/geoforge-studio/layer-eraser#readme
+repository=https://github.com/geoforge-studio/layer-eraser
+tracker=https://github.com/geoforge-studio/layer-eraser/issues
+license=GPL-3.0-or-later
+category=Vector
+icon=icon.png
+changelog=0.2.1: Fix invalid GeoPackage sibling connections by avoiding empty-source resets and XML reconstruction; synchronize existing provider caches; reduce repeated container scans; add cancellable backup progress and bounded busy retries. 0.2.0: Rename the prototype to Layer Eraser and use English throughout.
+experimental=False
+deprecated=False
+hasProcessingProvider=False
+tags=delete,layer,data source,geopackage,shapefile,geojson,layer tree
