@@ -3,6 +3,7 @@
 from contextlib import closing
 from pathlib import Path
 import json
+import gc
 import os
 import sqlite3
 import tempfile
@@ -29,15 +30,35 @@ except ImportError:
     HAVE_QGIS = False
 
 APP = None
+OWN_APP = False
 
 
 def setUpModule():
-    global APP
+    global APP, OWN_APP
     if HAVE_QGIS:
         APP = QgsApplication.instance()
         if APP is None:
             APP = QgsApplication([], False)
             APP.initQgis()
+            OWN_APP = True
+
+
+def tearDownModule():
+    global APP, OWN_APP
+    if not HAVE_QGIS or not OWN_APP:
+        return
+    from qgis.PyQt.QtCore import QCoreApplication, QEvent
+    # Qt 6 requires GUI objects to be disposed before provider shutdown.
+    QgsProject.instance().clear()
+    for widget in APP.topLevelWidgets():
+        widget.close()
+        widget.deleteLater()
+    gc.collect()
+    QCoreApplication.sendPostedEvents(None, QEvent.Type.DeferredDelete)
+    APP.processEvents()
+    APP.exitQgis()
+    APP = None
+    OWN_APP = False
 
 
 @unittest.skipUnless(HAVE_QGIS, "A real QGIS runtime is required")
@@ -341,7 +362,7 @@ class QgisTests(unittest.TestCase):
     def test_non_removable_layer_blocks_source_deletion_in_both_qt_bindings(self):
         from qgis.core import QgsMapLayer
         target = self.add(str(self.gpkg) + '|layername=target')
-        target.setFlags(target.flags() & ~QgsMapLayer.LayerFlag.Removable)
+        target.setFlags(QgsMapLayer.LayerFlags(target.flags() & ~QgsMapLayer.LayerFlag.Removable))
         with self.assertRaisesRegex(core.SourceError, 'protected against removal'):
             bridge.execute_delete(self.project, target, bridge.plan_layer(target), backup=False)
         self.assertIs(self.project.mapLayer(target.id()), target)
